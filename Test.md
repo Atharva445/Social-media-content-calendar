@@ -1,0 +1,1 @@
+"Jenkins CI pipeline test." | Out-File -Encoding utf8 JENKINS-CI-TEST.md
