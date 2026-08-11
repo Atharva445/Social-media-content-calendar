@@ -1,5 +1,5 @@
 package com.socialmedia.contentcalendar.controller;
-
+import jakarta.validation.Valid;
 import com.socialmedia.contentcalendar.model.Post;
 import com.socialmedia.contentcalendar.service.PostService;
 import org.springframework.http.HttpStatus;
@@ -18,7 +18,7 @@ public class PostController {
     }
 
     @PostMapping
-    public ResponseEntity<Post> createPost(@RequestBody Post post) {
+    public ResponseEntity<Post> createPost(@Valid @RequestBody Post post) {
 
         Post createdPost = postService.createPost(post);
 

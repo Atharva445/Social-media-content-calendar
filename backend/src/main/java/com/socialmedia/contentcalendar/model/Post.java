@@ -1,5 +1,5 @@
 package com.socialmedia.contentcalendar.model;
-
+import jakarta.validation.constraints.NotBlank;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -12,12 +12,16 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
     @Column(nullable = false)
     private String title;
 
+    @NotBlank
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+
+    @NotBlank
     @Column(nullable = false)
     private String platform;
 
@@ -27,6 +31,7 @@ public class Post {
     @Column(nullable = false)
     private LocalTime scheduledTime;
 
+    @NotBlank
     @Column(nullable = false)
     private String status = "DRAFT";
 
