@@ -290,6 +290,18 @@ function App() {
           + Create Post
         </button>
       </header>
+      
+          <div className="dashboard-actions">
+            <button
+              className="secondary-btn"
+              onClick={async () => {
+                await fetchPosts();
+                await fetchSummary();
+              }}
+            >
+              Refresh Data
+            </button>
+          </div>
 
       {/* DASHBOARD */}
       <section className="dashboard">
