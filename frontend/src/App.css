@@ -68,6 +68,12 @@
   margin-bottom: 25px;
 }
 
+.dashboard-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
 .dashboard-info {
   display: flex;
   justify-content: flex-end;
