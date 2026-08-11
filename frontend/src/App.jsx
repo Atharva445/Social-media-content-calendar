@@ -14,6 +14,8 @@ function App() {
     published: 0,
   });
 
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -66,6 +68,7 @@ function App() {
 
       const data = await response.json();
       setSummary(data);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error(error);
     }
@@ -291,18 +294,24 @@ function App() {
         </button>
       </header>
       
-          <div className="dashboard-actions">
-            <button
-              className="secondary-btn"
-              onClick={async () => {
-                await fetchPosts();
-                await fetchSummary();
-              }}
-            >
-              Refresh Data
-            </button>
+          <div className="dashboard-info">
+            <span>
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </span>
           </div>
-
+        
+        <div className="dashboard-actions">
+          <button
+            className="secondary-btn"
+            onClick={async () => {
+              await fetchPosts();
+              await fetchSummary();
+            }}
+          >
+            Refresh Dashboard
+          </button>
+        </div>
+        
       {/* DASHBOARD */}
       <section className="dashboard">
 
