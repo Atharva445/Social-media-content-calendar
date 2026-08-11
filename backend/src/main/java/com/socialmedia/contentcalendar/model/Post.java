@@ -1,6 +1,7 @@
 package com.socialmedia.contentcalendar.model;
-import jakarta.validation.constraints.NotBlank;
+
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -19,7 +20,6 @@ public class Post {
     @NotBlank
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
-
 
     @NotBlank
     @Column(nullable = false)
@@ -41,6 +41,7 @@ public class Post {
     public Post(String title, String content, String platform,
                 LocalDate scheduledDate, LocalTime scheduledTime,
                 String status) {
+
         this.title = title;
         this.content = content;
         this.platform = platform;
