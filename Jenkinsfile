@@ -30,6 +30,16 @@ pipeline {
             }
         }
 
+        stage('Selenium Tests') {
+            steps {
+                dir('backend') {
+                    bat '''
+                        mvnw.cmd test -Dtest=DashboardTest,CreatePostTest,SearchPostTest,UpdatePostTest
+                    '''
+                }
+            }
+        }
+
         stage('Package') {
             steps {
                 dir('backend') {
@@ -53,6 +63,11 @@ pipeline {
     }
 
     post {
+
+        always {
+            junit 'backend/target/surefire-reports/*.xml'
+        }
+
         success {
             echo 'Social Media Content Calendar pipeline completed successfully.'
         }
