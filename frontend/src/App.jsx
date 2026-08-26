@@ -278,7 +278,7 @@ function App() {
       {/* HEADER */}
       <header className="header">
         <div>
-          <h1>Social Media Content Calendar</h1>
+          <h1>Social Media Calendar</h1>
           <p>Manage, review and publish your social media content.</p>
         </div>
 
