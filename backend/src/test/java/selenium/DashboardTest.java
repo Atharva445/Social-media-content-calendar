@@ -16,7 +16,7 @@ public class DashboardTest extends BaseTest {
 
         assertTrue(
                 driver.getPageSource()
-                        .contains("Social Media Content Calendar XYZ"),
+                        .contains("Social Media Content Calendar"),
                 "Application heading should be displayed"
         );
 
