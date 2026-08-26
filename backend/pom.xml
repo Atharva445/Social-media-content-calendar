@@ -85,6 +85,13 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Selenium WebDriver for UI automation tests -->
+			<dependency>
+				<groupId>org.seleniumhq.selenium</groupId>
+				<artifactId>selenium-java</artifactId>
+				<version>4.46.0</version>
+				<scope>test</scope>
+			</dependency>
 	</dependencies>
 
 	<build>
