@@ -72,79 +72,83 @@ pipeline {
             }
         }
 
-        // NEW
+        // NEW DOCKER STAGES
         stage('Docker Build') {
-        steps {
-            withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
-                echo "Building Docker image: ${env.FULL_IMAGE_NAME}"
+            steps {
+                withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
 
-                dir('frontend') {
-                    bat "docker build -t ${env.FULL_IMAGE_NAME} ."
+                    echo "Building Docker image: ${env.FULL_IMAGE_NAME}"
+
+                    dir('frontend') {
+                        bat "docker build -t ${env.FULL_IMAGE_NAME} ."
+                    }
+
+                    echo "Docker image built successfully."
                 }
-
-                echo "Docker image built successfully."
             }
         }
-    }
 
-    stage('Docker Login') {
-        steps {
-            withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-social-media',
-                        usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD'
-                    )
-                ]) {
+        stage('Docker Login') {
+            steps {
+                withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
+
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'dockerhub-social-media',
+                            usernameVariable: 'DOCKER_USERNAME',
+                            passwordVariable: 'DOCKER_PASSWORD'
+                        )
+                    ]) {
+
+                        bat '''
+                            echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
+                        '''
+                    }
+
+                    echo "Docker Hub login successful."
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
+
+                    echo "Pushing Docker image: ${env.FULL_IMAGE_NAME}"
+
+                    bat "docker push ${env.FULL_IMAGE_NAME}"
+
+                    echo "Docker image pushed successfully to Docker Hub."
+                }
+            }
+        }
+
+        stage('Docker Deploy') {
+            steps {
+                withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
+
+                    echo "Deploying Docker container..."
+
                     bat '''
-                        echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
+                        docker stop social-media-calendar-container 2>NUL || exit /B 0
                     '''
+
+                    bat '''
+                        docker rm social-media-calendar-container 2>NUL || exit /B 0
+                    '''
+
+                    bat """
+                        docker run -d ^
+                        --name social-media-calendar-container ^
+                        -p 8083:80 ^
+                        ${env.FULL_IMAGE_NAME}
+                    """
+
+                    echo "Fresh Docker container deployed successfully."
+                    echo "Docker application URL: http://localhost:8083"
                 }
-
-                echo "Docker Hub login successful."
             }
         }
-    }
-
-    stage('Docker Push') {
-        steps {
-            withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
-                echo "Pushing Docker image: ${env.FULL_IMAGE_NAME}"
-
-                bat "docker push ${env.FULL_IMAGE_NAME}"
-
-                echo "Docker image pushed successfully to Docker Hub."
-            }
-        }
-}
-
-stage('Docker Deploy') {
-    steps {
-        withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
-
-            echo "Deploying Docker container..."
-
-            bat '''
-                docker stop social-media-calendar-container 2>NUL || exit /B 0
-            '''
-
-            bat '''
-                docker rm social-media-calendar-container 2>NUL || exit /B 0
-            '''
-
-            bat """
-                docker run -d ^
-                --name social-media-calendar-container ^
-                -p 8083:80 ^
-                ${env.FULL_IMAGE_NAME}
-            """
-
-            echo "Fresh Docker container deployed successfully."
-            echo "Docker application URL: http://localhost:8083"
-        }
-    }
-}
     }
 
     post {
