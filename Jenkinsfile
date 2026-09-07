@@ -13,15 +13,17 @@ pipeline {
     environment {
         DEPLOY_ENV = "${params.DEPLOY_ENV}"
 
-        // Docker Hub configuration
-        DOCKERHUB_USERNAME = "atharva756"
+        // Local Docker Registry
+        REGISTRY = "localhost:5000"
+
+        // Docker image name
         IMAGE_NAME = "social-media-calendar"
 
         // Jenkins automatically increments BUILD_NUMBER
         IMAGE_TAG = "build-${BUILD_NUMBER}"
 
         // Final Docker image name
-        FULL_IMAGE_NAME = "${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}"
+        FULL_IMAGE_NAME = "${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
     }
 
     stages {
@@ -61,6 +63,7 @@ pipeline {
         // EXISTING TOMCAT DEPLOYMENT - KEPT
         stage('Deploy to Tomcat') {
             steps {
+
                 echo "Deploying to ${env.DEPLOY_ENV} environment"
 
                 bat '''
@@ -72,9 +75,10 @@ pipeline {
             }
         }
 
-        // NEW DOCKER STAGES
+        // DOCKER BUILD
         stage('Docker Build') {
             steps {
+
                 withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
 
                     echo "Building Docker image: ${env.FULL_IMAGE_NAME}"
@@ -88,55 +92,41 @@ pipeline {
             }
         }
 
-        stage('Docker Login') {
-            steps {
-                withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
-
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'dockerhub-social-media',
-                            usernameVariable: 'DOCKER_USERNAME',
-                            passwordVariable: 'DOCKER_PASSWORD'
-                        )
-                    ]) {
-
-                        bat '''
-                            echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
-                        '''
-                    }
-
-                    echo "Docker Hub login successful."
-                }
-            }
-        }
-
+        // PUSH IMAGE TO LOCAL REGISTRY
         stage('Docker Push') {
             steps {
+
                 withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
 
-                    echo "Pushing Docker image: ${env.FULL_IMAGE_NAME}"
+                    echo "Pushing Docker image to local registry..."
+                    echo "Image: ${env.FULL_IMAGE_NAME}"
 
                     bat "docker push ${env.FULL_IMAGE_NAME}"
 
-                    echo "Docker image pushed successfully to Docker Hub."
+                    echo "Docker image pushed successfully to local registry."
                 }
             }
         }
 
+        // DEPLOY FRESH CONTAINER
         stage('Docker Deploy') {
             steps {
+
                 withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
 
                     echo "Deploying Docker container..."
 
+                    // Stop existing container if running
                     bat '''
                         docker stop social-media-calendar-container 2>NUL || exit /B 0
                     '''
 
+                    // Remove existing container
                     bat '''
                         docker rm social-media-calendar-container 2>NUL || exit /B 0
                     '''
 
+                    // Run new container
                     bat """
                         docker run -d ^
                         --name social-media-calendar-container ^
