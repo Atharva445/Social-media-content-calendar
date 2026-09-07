@@ -74,7 +74,8 @@ pipeline {
 
         // NEW
         stage('Docker Build') {
-            steps {
+        steps {
+            withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
                 echo "Building Docker image: ${env.FULL_IMAGE_NAME}"
 
                 dir('frontend') {
@@ -84,10 +85,11 @@ pipeline {
                 echo "Docker image built successfully."
             }
         }
+    }
 
-        // NEW
-        stage('Docker Login') {
-            steps {
+    stage('Docker Login') {
+        steps {
+            withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
                 withCredentials([
                     usernamePassword(
                         credentialsId: 'dockerhub-credentials',
@@ -103,10 +105,11 @@ pipeline {
                 echo "Docker Hub login successful."
             }
         }
+    }
 
-        // NEW
-        stage('Docker Push') {
-            steps {
+    stage('Docker Push') {
+        steps {
+            withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
                 echo "Pushing Docker image: ${env.FULL_IMAGE_NAME}"
 
                 bat "docker push ${env.FULL_IMAGE_NAME}"
@@ -114,35 +117,34 @@ pipeline {
                 echo "Docker image pushed successfully to Docker Hub."
             }
         }
+}
 
-        // NEW
-        stage('Docker Deploy') {
-            steps {
+stage('Docker Deploy') {
+    steps {
+        withEnv(["PATH+DOCKER=${env.DOCKER_PATH}"]) {
 
-                echo "Deploying Docker container..."
+            echo "Deploying Docker container..."
 
-                // Stop old container if running
-                bat '''
-                    docker stop social-media-calendar-container 2>NUL || exit /B 0
-                '''
+            bat '''
+                docker stop social-media-calendar-container 2>NUL || exit /B 0
+            '''
 
-                // Remove old container
-                bat '''
-                    docker rm social-media-calendar-container 2>NUL || exit /B 0
-                '''
+            bat '''
+                docker rm social-media-calendar-container 2>NUL || exit /B 0
+            '''
 
-                // Start new container
-                bat """
-                    docker run -d ^
-                    --name social-media-calendar-container ^
-                    -p 8083:80 ^
-                    ${env.FULL_IMAGE_NAME}
-                """
+            bat """
+                docker run -d ^
+                --name social-media-calendar-container ^
+                -p 8083:80 ^
+                ${env.FULL_IMAGE_NAME}
+            """
 
-                echo "Fresh Docker container deployed successfully."
-                echo "Docker application URL: http://localhost:8083"
-            }
+            echo "Fresh Docker container deployed successfully."
+            echo "Docker application URL: http://localhost:8083"
         }
+    }
+}
     }
 
     post {
