@@ -12,6 +12,16 @@ pipeline {
 
     environment {
         DEPLOY_ENV = "${params.DEPLOY_ENV}"
+
+        // Docker Hub configuration
+        DOCKERHUB_USERNAME = "atharva756"
+        IMAGE_NAME = "social-media-calendar"
+
+        // Jenkins automatically increments BUILD_NUMBER
+        IMAGE_TAG = "build-${BUILD_NUMBER}"
+
+        // Final Docker image name
+        FULL_IMAGE_NAME = "${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}"
     }
 
     stages {
@@ -48,7 +58,8 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        // EXISTING TOMCAT DEPLOYMENT - KEPT
+        stage('Deploy to Tomcat') {
             steps {
                 echo "Deploying to ${env.DEPLOY_ENV} environment"
 
@@ -60,6 +71,78 @@ pipeline {
                 echo "Tomcat application URL: http://localhost:8081/content-calendar-0.0.1-SNAPSHOT/"
             }
         }
+
+        // NEW
+        stage('Docker Build') {
+            steps {
+                echo "Building Docker image: ${env.FULL_IMAGE_NAME}"
+
+                dir('frontend') {
+                    bat "docker build -t ${env.FULL_IMAGE_NAME} ."
+                }
+
+                echo "Docker image built successfully."
+            }
+        }
+
+        // NEW
+        stage('Docker Login') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    bat '''
+                        echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
+                    '''
+                }
+
+                echo "Docker Hub login successful."
+            }
+        }
+
+        // NEW
+        stage('Docker Push') {
+            steps {
+                echo "Pushing Docker image: ${env.FULL_IMAGE_NAME}"
+
+                bat "docker push ${env.FULL_IMAGE_NAME}"
+
+                echo "Docker image pushed successfully to Docker Hub."
+            }
+        }
+
+        // NEW
+        stage('Docker Deploy') {
+            steps {
+
+                echo "Deploying Docker container..."
+
+                // Stop old container if running
+                bat '''
+                    docker stop social-media-calendar-container 2>NUL || exit /B 0
+                '''
+
+                // Remove old container
+                bat '''
+                    docker rm social-media-calendar-container 2>NUL || exit /B 0
+                '''
+
+                // Start new container
+                bat """
+                    docker run -d ^
+                    --name social-media-calendar-container ^
+                    -p 8083:80 ^
+                    ${env.FULL_IMAGE_NAME}
+                """
+
+                echo "Fresh Docker container deployed successfully."
+                echo "Docker application URL: http://localhost:8083"
+            }
+        }
     }
 
     post {
@@ -69,7 +152,10 @@ pipeline {
         }
 
         success {
-            echo 'Social Media Content Calendar pipeline completed successfully.'
+            echo 'Social Media Content Calendar CI/CD pipeline completed successfully.'
+            echo "Docker image: ${env.FULL_IMAGE_NAME}"
+            echo "Docker container: social-media-calendar-container"
+            echo "Application URL: http://localhost:8083"
         }
 
         failure {
